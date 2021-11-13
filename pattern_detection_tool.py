@@ -21,27 +21,49 @@ def show_pixel_set(img_nparray):
 
 def tooth_forward(img_array):
     img = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
-    half =int(img.shape[0]/2)
+    half = int(img.shape[0]/2)
     img_up = img[:][int(half/10):half]
     img_down = img[:][half:int(half*19/10)]
     img_medium = img[:][int(half/2):int(half*3/2)]
     gums = 29
     bac = 0
-    sum_img_up_gums = max(sum(img_up.flatten() == gums),1)
-    sum_img_up_bac = max(sum(img_up.flatten() == bac),1)
-    sum_img_down_gums = max(sum(img_down.flatten() == gums),1)
-    sum_img_down_bac = max(sum(img_down.flatten() == bac),1)
-    if sum(img_medium.flatten() == bac)/max(sum(img_medium.flatten() == gums),1) > 3:
-        forward,value = False,-1
-    elif (sum_img_up_gums/sum_img_up_bac) > (sum_img_down_gums/sum_img_down_bac) and (sum_img_up_gums/sum_img_up_bac) > 2.5: 
-        forward,value = True,1
-        #upper tooth
-    elif (sum_img_up_gums/sum_img_up_bac) < (sum_img_down_gums/sum_img_down_bac) and (sum_img_down_gums/sum_img_down_bac) > 2.5: 
-        forward,value = True,0
-        #lower tooth
+
+    def get_counts(values, counts, traget_value):
+        return counts[np.where(values == traget_value)] if counts[np.where(values == traget_value)].size > 0 else 1
+
+    # Up
+    values, counts = np.unique(img_up.astype(np.uint8), return_counts=True)
+    sum_img_up_gums = get_counts(values, counts, gums)
+    sum_img_up_bac = get_counts(values, counts, bac)
+
+    # Down
+    values, counts = np.unique(img_down.astype(np.uint8), return_counts=True)
+    sum_img_down_gums = get_counts(values, counts, gums)
+    sum_img_down_bac = get_counts(values, counts, bac)
+
+    # Medium
+    values, counts = np.unique(img_medium.astype(np.uint8), return_counts=True)
+    sum_img_medium_gums = get_counts(values, counts, gums)
+    sum_img_medium_bac = get_counts(values, counts, bac)
+
+    up_rate = (sum_img_up_gums/sum_img_up_bac)
+    down_rate = (sum_img_down_gums/sum_img_down_bac)
+
+    if sum_img_medium_bac/sum_img_medium_gums > 3:
+        forward, value = False, -1
+
+    elif up_rate > down_rate and up_rate > 2.5:
+        forward, value = True, 1
+        # upper tooth
+        
+    elif up_rate < down_rate and down_rate > 2.5:
+        forward, value = True, 0
+        # lower tooth
+
     else:
-        forward,value = False,-2
-    return forward,value
+        forward, value = False, -2
+
+    return forward, value
 
 def check_forward_status(value):
     if value == 1:
@@ -113,23 +135,21 @@ def get_inertia_parameter(img_array):
         return 4,3,2,1,0
     
 def find_roots_by_countour(img_array1, img_array2, value):
+    def find_all_pixels(image, color):
+        return np.where(np.all(image == color, axis=2), 1, 0)
+
     red = np.array([255, 0, 0])
     pink = np.array([255, 0, 255])
-    black = np.array([0, 0, 0])
-    point_list = []
-    for i in range(img_array1.shape[0]):
-        for j in range(img_array1.shape[1]):
-            if (img_array1[i][j] == red).sum() == 3 and (img_array2[i][j] == pink).sum() == 3:
-                point_list.append([i,j])
-            else:
-                pass
+
+    i, j = np.where(find_all_pixels(img_array1, red)*find_all_pixels(img_array2, pink) == 1)
+    point_list = [[i_, j_] for i_, j_ in zip(i, j)]
     if point_list != []:
         if value == 1:
             return point_list[point_list.index(min(point_list))]
         elif value == 0:
             return point_list[point_list.index(max(point_list))]
     else:
-        return [None,None]
+        return [None, None]
 
 
 def root_point_detect(fill_up_img,value):

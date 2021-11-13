@@ -48,7 +48,7 @@ def show_pixel_set(img_nparray):
     return dict(zip(unique, counts))
 
 def get_name_from_path(path,Extension=True):
-    name = path.split('/')[-1]
+    name = os.path.basename(path)
     if Extension:
         return name
     else:
