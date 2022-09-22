@@ -5,6 +5,16 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+color_list = [255, 0, 86, 179, 226, 105, 76, 150, 29, 151]
+def check_is_pollute(BGRimg):
+    gray_img = cv2.cvtColor(BGRimg, cv2.COLOR_BGR2GRAY)
+    for color in color_list:
+        gray_img = np.where(gray_img==color, 0, gray_img)
+    if np.sum(gray_img) == 0:
+        return False
+    else:
+        return True
+
 def show_patient_info(patient_list, file_list):
     print('There {} patient in this folder.\n'.format(len(patient_list)))
     for index, patient in enumerate(patient_list):
