@@ -98,6 +98,7 @@ def inertia_detection_cv_line(img_path, draw_img=None,nparray=True,scale=100,wid
             else:
                 return img,[(0,0),(1,1)]
         else:
+            print('中軸失效 < 5000')
             return img,[(0,0),(1,1)]
     except Exception as e: 
         print('except')
@@ -156,6 +157,12 @@ def root_point_detect(fill_up_img,value):
     zero_img = np.zeros((fill_up_img.shape[0],fill_up_img.shape[1],3), np.uint8)
     inertia,line_of_inertia = inertia_detection_cv_line(fill_up_img,draw_img=zero_img,nparray=True,scale=500,width=3,ignore_slope=True)
     root_contour = draw_approx_hull_polygon(fill_up_img.astype('uint8'))
+    # print('here')
+    # plt.subplot(1, 2, 1)
+    # plt.imshow(fill_up_img)
+    # plt.subplot(1, 2, 2)
+    # plt.imshow(root_contour)
+    # plt.show()
     y,x = find_roots_by_countour(root_contour,inertia,value)
     return [x],[y],line_of_inertia
 
